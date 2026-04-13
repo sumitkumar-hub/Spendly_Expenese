@@ -1,89 +1,76 @@
-import React from 'react';
+import React from "react";
 import {
-  ResponsiveContainer,
   LineChart,
   Line,
   XAxis,
   YAxis,
   Tooltip,
+  ResponsiveContainer,
   CartesianGrid,
-  Legend
-} from 'recharts';
+} from "recharts";
 
-export default function MonthlyChart({ data = [], formatCurrency }) {
-
-  // ✅ EMPTY STATE FIX
-  if (!data || data.length === 0) {
+// 🔥 TOOLTIP
+const CustomTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
     return (
-      <div className="bg-white/5 p-4 rounded-xl h-[300px] flex items-center justify-center text-gray-400">
-        No monthly data available
+      <div className="bg-slate-800 text-white p-3 rounded-lg border border-white/10 shadow-lg">
+        <p className="text-sm mb-1">{label}</p>
+        <p className="text-green-400 text-sm">
+          Income: ₹{payload[0]?.value}
+        </p>
+        <p className="text-red-400 text-sm">
+          Expense: ₹{payload[1]?.value}
+        </p>
       </div>
     );
   }
+  return null;
+};
 
+export default function MonthlyChart({ data }) {
   return (
-    <div className="bg-white/5 p-4 rounded-xl h-[300px]">
+    <div className="bg-slate-900/80 backdrop-blur-xl p-6 rounded-2xl border border-white/10 shadow-lg">
 
-      <h2 className="text-white mb-3 font-semibold">
-        Income vs Expense
-      </h2>
+      <h3 className="text-white font-semibold mb-6">
+        Monthly Overview
+      </h3>
 
-      <ResponsiveContainer width="100%" height="100%">
+      <ResponsiveContainer width="100%" height={320}>
         <LineChart data={data}>
 
-          {/* GRID */}
-          <CartesianGrid stroke="#ffffff10" strokeDasharray="3 3" />
+          <CartesianGrid strokeDasharray="3 3" stroke="#2e3440" />
 
-          {/* X AXIS */}
           <XAxis
             dataKey="month"
             stroke="#aaa"
-            tick={{ fontSize: 12 }}
           />
 
-          {/* Y AXIS */}
+          {/* 🔥 IMPORTANT FIX */}
           <YAxis
             stroke="#aaa"
-            tick={{ fontSize: 12 }}
-            tickFormatter={(v) =>
-              formatCurrency ? formatCurrency(v) : v
-            }
+            tickFormatter={(value) => `₹${value / 1000}k`}
           />
 
-          {/* TOOLTIP */}
-          <Tooltip
-            formatter={(v) =>
-              formatCurrency ? formatCurrency(v) : v
-            }
-            contentStyle={{
-              backgroundColor: "#0f172a",
-              borderRadius: "8px",
-              border: "1px solid #334155",
-              color: "#fff"
-            }}
-          />
+          <Tooltip content={<CustomTooltip />} />
 
-          {/* LEGEND */}
-          <Legend />
-
-          {/* INCOME LINE */}
+          {/* 🔥 INCOME */}
           <Line
             type="monotone"
             dataKey="income"
-            stroke="#22c55e"
+            stroke="#10b981"
             strokeWidth={3}
-            dot={{ r: 3 }}
-            activeDot={{ r: 6 }}
+            dot={{ r: 5 }}
+            activeDot={{ r: 7 }}
           />
 
-          {/* EXPENSE LINE */}
+          {/* 🔥 EXPENSE */}
           <Line
             type="monotone"
             dataKey="expense"
             stroke="#ef4444"
             strokeWidth={3}
-            dot={{ r: 3 }}
-            activeDot={{ r: 6 }}
+            dot={{ r: 5 }}
+            activeDot={{ r: 7 }}
           />
 
         </LineChart>

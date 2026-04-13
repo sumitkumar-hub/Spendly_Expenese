@@ -1,15 +1,13 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { loginUser } from '../api/auth.js';
-import { setToken } from '../utils/auth.js';
-import toast from 'react-hot-toast';
-import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import { loginUser } from "../api/auth.js";
+import toast from "react-hot-toast";
+import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 
 export default function Login() {
-
   const [form, setForm] = useState({
-    email: '',
-    password: ''
+    email: "",
+    password: "",
   });
 
   const [showPassword, setShowPassword] = useState(false);
@@ -26,8 +24,8 @@ export default function Login() {
     e.preventDefault();
 
     const newErrors = {};
-    if (!form.email) newErrors.email = 'Email is required';
-    if (!form.password) newErrors.password = 'Password is required';
+    if (!form.email) newErrors.email = "Email is required";
+    if (!form.password) newErrors.password = "Password is required";
 
     setErrors(newErrors);
     if (Object.keys(newErrors).length > 0) return;
@@ -35,22 +33,19 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const data = await loginUser(form);
+      const res = await loginUser(form);
 
-      console.log("LOGIN DATA:", data); // debug
+      console.log("LOGIN RESPONSE:", res);
 
-      const token =
-        data?.token ||
-        data?.accessToken ||
-        data?.data?.token;
-
-      if (!token) {
-        toast.error("Login failed (token missing)");
+      // 🔥 SAFE ACCESS
+      if (!res || !res.token || !res.user) {
+        toast.error(res?.message || "Login failed");
         return;
       }
 
-      // ✅ SAVE TOKEN
-      setToken(token);
+      // ✅ SAVE DATA
+      localStorage.setItem("token", res.token);
+      localStorage.setItem("user", JSON.stringify(res.user));
 
       if (remember) {
         localStorage.setItem("rememberUser", JSON.stringify(form.email));
@@ -58,12 +53,17 @@ export default function Login() {
 
       toast.success("Login successful");
 
-      // 🔥 FORCE REDIRECT (FINAL FIX)
+      // ✅ REDIRECT
       window.location.href = "/dashboard";
 
     } catch (err) {
       console.log("LOGIN ERROR:", err);
-      toast.error(err?.response?.data?.message || "Login failed");
+
+      toast.error(
+        err?.response?.data?.message ||
+        err?.message ||
+        "Login failed"
+      );
     } finally {
       setLoading(false);
     }
@@ -88,7 +88,7 @@ export default function Login() {
           <div>
             <label className="text-sm text-gray-300">Email</label>
 
-            <div className="flex items-center gap-2 mt-1 bg-white/10 border border-white/20 rounded-lg px-3 py-2 focus-within:ring-2 focus-within:ring-indigo-500">
+            <div className="flex items-center gap-2 mt-1 bg-white/10 border border-white/20 rounded-lg px-3 py-2">
               <Mail size={18} className="text-gray-400" />
 
               <input
@@ -110,7 +110,7 @@ export default function Login() {
           <div>
             <label className="text-sm text-gray-300">Password</label>
 
-            <div className="flex items-center gap-2 mt-1 bg-white/10 border border-white/20 rounded-lg px-3 py-2 focus-within:ring-2 focus-within:ring-indigo-500">
+            <div className="flex items-center gap-2 mt-1 bg-white/10 border border-white/20 rounded-lg px-3 py-2">
               <Lock size={18} className="text-gray-400" />
 
               <input
@@ -135,7 +135,7 @@ export default function Login() {
             )}
           </div>
 
-          {/* REMEMBER + FORGOT */}
+          {/* REMEMBER */}
           <div className="flex items-center justify-between text-sm">
             <label className="flex items-center gap-2 text-gray-300">
               <input
@@ -147,10 +147,7 @@ export default function Login() {
               Remember me
             </label>
 
-            <Link
-              to="/forgot-password"
-              className="text-indigo-400 hover:underline"
-            >
+            <Link to="/forgot-password" className="text-indigo-400">
               Forgot password?
             </Link>
           </div>
@@ -159,19 +156,12 @@ export default function Login() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:opacity-90 transition"
+            className="w-full py-2 rounded-lg bg-indigo-500 text-white hover:bg-indigo-600 transition"
           >
-            {loading ? 'Logging in...' : 'Login'}
+            {loading ? "Logging in..." : "Login"}
           </button>
 
         </form>
-
-        <p className="text-sm text-gray-400 text-center mt-6">
-          Don’t have an account?{' '}
-          <Link to="/register" className="text-indigo-400 hover:underline">
-            Register
-          </Link>
-        </p>
 
       </div>
     </div>

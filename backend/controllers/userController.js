@@ -16,19 +16,31 @@ export const updateProfile = async (req, res) => {
 
     const { name, email, password } = req.body;
 
+    // ✅ EMAIL DUPLICATE CHECK
+    if (email && email !== user.email) {
+      const existing = await User.findOne({ email });
+      if (existing) {
+        return res.status(400).json({
+          success: false,
+          message: "Email already in use",
+        });
+      }
+    }
+
     // ✅ Update fields
     if (name) user.name = name;
     if (email) user.email = email;
 
-    // ⚠️ IMPORTANT: password direct assign (model will hash)
+    // ⚠️ Password hash model karega
     if (password && password.trim() !== "") {
       user.password = password;
     }
 
     const updatedUser = await user.save();
 
-    res.json({
+    return res.json({
       success: true,
+      message: "Profile updated successfully",
       user: {
         id: updatedUser._id,
         name: updatedUser.name,
@@ -39,7 +51,7 @@ export const updateProfile = async (req, res) => {
   } catch (err) {
     console.error("Update Profile Error:", err);
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Server error",
     });

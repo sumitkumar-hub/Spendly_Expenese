@@ -6,7 +6,7 @@ import cors from "cors";
 import authRoutes from "./routes/authRoutes.js";
 import transactionRoutes from "./routes/transactionRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
-import userRoutes from "./routes/userRoutes.js"; // 🔥 NEW
+import userRoutes from "./routes/userRoutes.js";
 
 dotenv.config();
 
@@ -15,9 +15,13 @@ const app = express();
 // ✅ Middleware
 app.use(express.json());
 
+// 🔥 FIXED CORS (IMPORTANT)
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: [
+      "http://localhost:5173",
+      "http://localhost:5174", // 🔥 THIS WAS MISSING
+    ],
     credentials: true,
   })
 );
@@ -26,7 +30,7 @@ app.use(
 app.use("/api/auth", authRoutes);
 app.use("/api/transactions", transactionRoutes);
 app.use("/api/dashboard", dashboardRoutes);
-app.use("/api/users", userRoutes); // 🔥 NEW (IMPORTANT)
+app.use("/api/users", userRoutes);
 
 // ✅ MongoDB Connection
 mongoose
@@ -34,7 +38,7 @@ mongoose
   .then(() => console.log("✅ MongoDB connected"))
   .catch((err) => console.log("❌ MongoDB error:", err));
 
-// ✅ Health Check (optional but useful)
+// ✅ Health Check
 app.get("/", (req, res) => {
   res.send("API running...");
 });

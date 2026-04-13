@@ -1,18 +1,19 @@
-import jwt from 'jsonwebtoken';
-import crypto from 'crypto';
-import nodemailer from 'nodemailer';
-import User from '../models/User.js';
+import jwt from "jsonwebtoken";
+import crypto from "crypto";
+import nodemailer from "nodemailer";
+import User from "../models/User.js";
 
 // ================= TOKEN =================
 const generateToken = (userId) => {
   const secret = process.env.JWT_SECRET;
-  if (!secret) throw new Error('JWT_SECRET not set in environment');
-  return jwt.sign({ id: userId }, secret, { expiresIn: '7d' });
+  if (!secret) throw new Error("JWT_SECRET not set in environment");
+
+  return jwt.sign({ id: userId }, secret, { expiresIn: "7d" });
 };
 
 // ================= EMAIL SETUP =================
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  service: "gmail",
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
@@ -25,27 +26,45 @@ export const registerUser = async (req, res) => {
     const { name, email, password } = req.body;
 
     if (!name || !email || !password) {
-      return res.status(400).json({ success: false, message: 'All fields are required' });
+      return res.status(400).json({
+        success: false,
+        message: "All fields are required",
+      });
     }
 
     const existing = await User.findOne({ email });
+
     if (existing) {
-      return res.status(400).json({ success: false, message: 'User already exists' });
+      return res.status(400).json({
+        success: false,
+        message: "User already exists",
+      });
     }
 
     const user = await User.create({ name, email, password });
 
-    const userData = { id: user._id, name: user.name, email: user.email };
+    const token = generateToken(user._id);
 
+    const userData = {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+    };
+
+    // 🔥 Consistent response (no nested data)
     return res.status(201).json({
       success: true,
-      message: 'User registered',
-      data: { user: userData }
+      message: "User registered successfully",
+      user: userData,
+      token: token,
     });
-
   } catch (err) {
-    console.error('registerUser error:', err);
-    return res.status(500).json({ success: false, message: 'Server error' });
+    console.error("registerUser error:", err);
+
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
   }
 };
 
@@ -55,32 +74,52 @@ export const loginUser = async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ success: false, message: 'Email and password are required' });
+      return res.status(400).json({
+        success: false,
+        message: "Email and password are required",
+      });
     }
 
     const user = await User.findOne({ email });
+
     if (!user) {
-      return res.status(400).json({ success: false, message: 'Invalid credentials' });
+      return res.status(400).json({
+        success: false,
+        message: "Invalid credentials",
+      });
     }
 
     const isMatch = await user.comparePassword(password);
+
     if (!isMatch) {
-      return res.status(401).json({ success: false, message: 'Invalid credentials' });
+      return res.status(401).json({
+        success: false,
+        message: "Invalid credentials",
+      });
     }
 
     const token = generateToken(user._id);
 
-    const userData = { id: user._id, name: user.name, email: user.email };
+    const userData = {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+    };
 
+    // 🔥 FINAL FIX (flat response)
     return res.json({
       success: true,
-      message: 'Login successful',
-      data: { user: userData, token }
+      message: "Login successful",
+      user: userData,
+      token: token,
     });
-
   } catch (err) {
-    console.error('loginUser error:', err);
-    return res.status(500).json({ success: false, message: 'Server error' });
+    console.error("loginUser error:", err);
+
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
   }
 };
 
@@ -90,8 +129,12 @@ export const forgotPassword = async (req, res) => {
     const { email } = req.body;
 
     const user = await User.findOne({ email });
+
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
     }
 
     // 🔐 Generate token
@@ -102,7 +145,7 @@ export const forgotPassword = async (req, res) => {
       .update(resetToken)
       .digest("hex");
 
-    user.resetPasswordExpire = Date.now() + 15 * 60 * 1000; // 15 min
+    user.resetPasswordExpire = Date.now() + 15 * 60 * 1000;
 
     await user.save();
 
@@ -119,11 +162,17 @@ export const forgotPassword = async (req, res) => {
       `,
     });
 
-    res.json({ message: "Reset link sent to email" });
-
+    return res.json({
+      success: true,
+      message: "Reset link sent to email",
+    });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Email failed" });
+
+    return res.status(500).json({
+      success: false,
+      message: "Email failed",
+    });
   }
 };
 
@@ -144,19 +193,29 @@ export const resetPassword = async (req, res) => {
     });
 
     if (!user) {
-      return res.status(400).json({ message: "Invalid or expired token" });
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or expired token",
+      });
     }
 
+    // 🔥 Password will be hashed by model pre-save hook
     user.password = password;
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
 
     await user.save();
 
-    res.json({ message: "Password reset successful" });
-
+    return res.json({
+      success: true,
+      message: "Password reset successful",
+    });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Reset failed" });
+
+    return res.status(500).json({
+      success: false,
+      message: "Reset failed",
+    });
   }
 };

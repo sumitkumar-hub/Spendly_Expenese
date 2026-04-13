@@ -1,9 +1,9 @@
 import React, { useState } from "react";
+import ReactDOM from "react-dom";
 import toast from "react-hot-toast";
-import Layout from "../components/Layout";
 import { updateProfile } from "../api/user";
 
-export default function Profile() {
+export default function ProfileModal({ isOpen, onClose }) {
   const storedUser = JSON.parse(localStorage.getItem("user")) || {};
 
   const [form, setForm] = useState({
@@ -13,6 +13,8 @@ export default function Profile() {
   });
 
   const [loading, setLoading] = useState(false);
+
+  if (!isOpen) return null;
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -26,14 +28,11 @@ export default function Profile() {
 
       const res = await updateProfile(form);
 
-      // ✅ update localStorage from backend response
       localStorage.setItem("user", JSON.stringify(res.user));
 
-      toast.success("Profile updated successfully");
+      toast.success("Profile updated");
 
-      // 🔥 optional: clear password field
-      setForm((prev) => ({ ...prev, password: "" }));
-
+      onClose();
     } catch (err) {
       toast.error(err.response?.data?.message || "Update failed");
     } finally {
@@ -41,11 +40,20 @@ export default function Profile() {
     }
   };
 
-  return (
-    <Layout>
-      <div className="max-w-lg mx-auto mt-10 bg-white/5 border border-white/10 rounded-xl p-6 shadow-lg text-white">
+  return ReactDOM.createPortal(
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[9999]">
 
-        <h2 className="text-2xl font-bold mb-6 text-center">
+      <div className="bg-slate-900 p-6 rounded-xl w-full max-w-md text-white relative shadow-2xl">
+
+        {/* CLOSE */}
+        <button
+          onClick={onClose}
+          className="absolute top-2 right-3 text-xl"
+        >
+          ✕
+        </button>
+
+        <h2 className="text-xl font-bold mb-4 text-center">
           Edit Profile
         </h2>
 
@@ -57,7 +65,7 @@ export default function Profile() {
             value={form.name}
             onChange={handleChange}
             placeholder="Name"
-            className="w-full p-3 rounded bg-transparent border border-white/10"
+            className="w-full p-3 rounded bg-slate-800 border border-white/10"
             required
           />
 
@@ -67,7 +75,7 @@ export default function Profile() {
             value={form.email}
             onChange={handleChange}
             placeholder="Email"
-            className="w-full p-3 rounded bg-transparent border border-white/10"
+            className="w-full p-3 rounded bg-slate-800 border border-white/10"
             required
           />
 
@@ -77,12 +85,12 @@ export default function Profile() {
             value={form.password}
             onChange={handleChange}
             placeholder="New Password"
-            className="w-full p-3 rounded bg-transparent border border-white/10"
+            className="w-full p-3 rounded bg-slate-800 border border-white/10"
           />
 
           <button
             disabled={loading}
-            className="w-full bg-indigo-500 py-3 rounded-lg hover:bg-indigo-600 transition disabled:opacity-50"
+            className="w-full bg-indigo-500 py-3 rounded-lg"
           >
             {loading ? "Updating..." : "Update Profile"}
           </button>
@@ -90,6 +98,7 @@ export default function Profile() {
         </form>
 
       </div>
-    </Layout>
+    </div>,
+    document.body // 🔥 KEY FIX
   );
 }

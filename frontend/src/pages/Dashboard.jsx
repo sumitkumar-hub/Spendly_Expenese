@@ -26,7 +26,6 @@ export default function Dashboard() {
     fetchExpenses();
   }, []);
 
-  // ================= FILTER =================
   const filteredExpenses = useMemo(() => {
     const now = new Date();
 
@@ -36,23 +35,16 @@ export default function Dashboard() {
       const d = new Date(tx.date);
       if (isNaN(d)) return false;
 
-      if (activeTab === "daily") {
-        return d.toDateString() === now.toDateString();
-      }
-
+      if (activeTab === "daily") return d.toDateString() === now.toDateString();
       if (activeTab === "weekly") {
         const weekAgo = new Date();
         weekAgo.setDate(now.getDate() - 7);
         return d >= weekAgo;
       }
-
       if (activeTab === "monthly") {
-        return (
-          d.getMonth() === now.getMonth() &&
-          d.getFullYear() === now.getFullYear()
-        );
+        return d.getMonth() === now.getMonth() &&
+               d.getFullYear() === now.getFullYear();
       }
-
       if (activeTab === "yearly") {
         return d.getFullYear() === now.getFullYear();
       }
@@ -61,7 +53,6 @@ export default function Dashboard() {
     });
   }, [expenses, activeTab]);
 
-  // ================= CALCULATIONS =================
   const totalIncome = filteredExpenses
     .filter((t) => t.type === "income")
     .reduce((acc, t) => acc + Number(t.amount || 0), 0);
@@ -81,13 +72,11 @@ export default function Dashboard() {
       currency: "INR",
     }).format(v);
 
-  // ================= CHART DATA =================
   const monthlyData = useMemo(() => {
     const map = new Map();
 
     filteredExpenses.forEach((tx) => {
       const d = new Date(tx.date);
-
       const label = d.toLocaleString("default", {
         month: "short",
         year: "numeric",
@@ -99,11 +88,8 @@ export default function Dashboard() {
 
       const entry = map.get(label);
 
-      if (tx.type === "income") {
-        entry.income += Number(tx.amount || 0);
-      } else {
-        entry.expense += Number(tx.amount || 0);
-      }
+      if (tx.type === "income") entry.income += Number(tx.amount || 0);
+      else entry.expense += Number(tx.amount || 0);
     });
 
     return Array.from(map.values());
@@ -136,12 +122,14 @@ export default function Dashboard() {
         <p className="text-gray-400">Welcome back 👋</p>
       </div>
 
-      {/* SUMMARY */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+      {/* 🔥 NEW CARDS DESIGN */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+
         <Card title="Balance" value={formatCurrency(balance)} color="green" />
         <Card title="Income" value={formatCurrency(totalIncome)} color="green" />
         <Card title="Expense" value={formatCurrency(totalExpenses)} color="red" />
         <Card title="Savings %" value={`${savingsRate}%`} color="blue" />
+
       </div>
 
       {/* FILTER */}
@@ -170,12 +158,6 @@ export default function Dashboard() {
       {/* TRANSACTIONS */}
       <TransactionList data={filteredExpenses} />
 
-      {filteredExpenses.length === 0 && (
-        <div className="text-center text-gray-400 mt-4">
-          No data available
-        </div>
-      )}
-
       {/* FLOAT BUTTONS */}
       <div className="fixed bottom-6 right-6 flex flex-col gap-4">
         <button
@@ -195,38 +177,30 @@ export default function Dashboard() {
 
       {/* MODALS */}
       {showExpense && (
-        <ExpenseModal
-          onClose={() => setShowExpense(false)}
-          onAdd={(data) => {
-            setExpenses((prev) => [data, ...prev]);
-            toast.success("Expense added");
-          }}
-        />
+        <ExpenseModal onClose={() => setShowExpense(false)} />
       )}
 
       {showIncome && (
-        <IncomeModal
-          onClose={() => setShowIncome(false)}
-          onAdd={(data) => {
-            setExpenses((prev) => [data, ...prev]);
-            toast.success("Income added");
-          }}
-        />
+        <IncomeModal onClose={() => setShowIncome(false)} />
       )}
 
     </Layout>
   );
 }
 
-// 🔥 CARD COMPONENT
+// 🔥 NEW CARD COMPONENT
 function Card({ title, value, color }) {
   return (
-    <div className="relative p-[1px] rounded-2xl bg-gradient-to-br from-white/10 to-transparent hover:scale-[1.03] transition">
-      <div className="bg-slate-900 rounded-2xl p-5">
-        <p className="text-gray-400 text-sm">{title}</p>
+    <div className="relative p-[1px] rounded-2xl bg-gradient-to-br from-white/10 to-transparent hover:scale-[1.03] transition duration-300">
+
+      <div className="bg-slate-900/80 backdrop-blur-xl rounded-2xl p-5 border border-white/10 shadow-lg">
+
+        <p className="text-gray-400 text-sm mb-1">{title}</p>
+
         <h2 className={`text-${color}-400 text-2xl font-bold`}>
           {value}
         </h2>
+
       </div>
     </div>
   );
