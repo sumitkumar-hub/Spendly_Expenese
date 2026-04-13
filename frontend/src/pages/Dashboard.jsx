@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
-import { getExpenses } from "../api/expense.js";
+import { getxpenses } from "../api/expense.js";
 import { getBudget, setBudget } from "../api/budget.js";
 import { getCategoryBudgets, setCategoryBudget } from "../api/categoryBudget.js";
 import Layout from "../components/Layout";
