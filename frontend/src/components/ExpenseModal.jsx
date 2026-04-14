@@ -1,4 +1,6 @@
 import { useState } from "react";
+import toast from "react-hot-toast";
+import api from "../api/axios";
 
 const expenseCategories = [
   "Food",
@@ -10,7 +12,7 @@ const expenseCategories = [
   "Other",
 ];
 
-export default function ExpenseModal({ onClose, onAdd }) {
+export default function ExpenseModal({ onClose }) {
 
   const [form, setForm] = useState({
     title: "",
@@ -21,7 +23,7 @@ export default function ExpenseModal({ onClose, onAdd }) {
 
   const [error, setError] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!form.title || !form.amount) {
@@ -29,14 +31,22 @@ export default function ExpenseModal({ onClose, onAdd }) {
       return;
     }
 
-    onAdd({
-      ...form,
-      type: "expense",
-      amount: Number(form.amount),
-      date: form.date || new Date().toISOString()
-    });
+    try {
+      await api.post("/transactions", {
+        ...form,
+        type: "expense",
+        amount: Number(form.amount),
+        date: form.date || new Date().toISOString(),
+      });
 
-    onClose();
+      toast.success("Expense added ✅");
+      onClose();
+      window.location.reload(); // quick refresh
+
+    } catch (err) {
+      console.log(err);
+      toast.error("Failed to add expense ❌");
+    }
   };
 
   return (
@@ -48,66 +58,42 @@ export default function ExpenseModal({ onClose, onAdd }) {
       <form
         onSubmit={handleSubmit}
         onClick={(e) => e.stopPropagation()}
-        className="bg-slate-900 border border-white/10 backdrop-blur-xl p-4 sm:p-6 rounded-2xl w-full max-w-sm space-y-4 shadow-2xl"
+        className="bg-slate-900 p-6 rounded-xl w-full max-w-sm space-y-4"
       >
 
-        {/* HEADER */}
-        <div className="flex justify-between items-center">
-          <h2 className="text-white font-semibold text-base sm:text-lg">
-            Add Expense
-          </h2>
+        <h2 className="text-white text-lg">Add Expense</h2>
 
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-gray-400 hover:text-white text-lg"
-          >
-            ✕
-          </button>
-        </div>
+        {error && <p className="text-red-400">{error}</p>}
 
-        {error && (
-          <p className="text-red-400 text-sm">{error}</p>
-        )}
-
-        {/* TITLE */}
         <input
           placeholder="Title"
-          value={form.title}
+          className="w-full p-2 bg-white/10 text-white"
           onChange={e => setForm({ ...form, title: e.target.value })}
-          className="w-full p-2 sm:p-3 rounded-lg bg-white/10 text-white outline-none focus:ring-2 focus:ring-indigo-500"
         />
 
-        {/* AMOUNT */}
         <input
           type="number"
           placeholder="Amount"
-          value={form.amount}
+          className="w-full p-2 bg-white/10 text-white"
           onChange={e => setForm({ ...form, amount: e.target.value })}
-          className="w-full p-2 sm:p-3 rounded-lg bg-white/10 text-white outline-none focus:ring-2 focus:ring-indigo-500"
         />
 
-        {/* CATEGORY */}
         <select
-          value={form.category}
+          className="w-full p-2 bg-white/10 text-white"
           onChange={e => setForm({ ...form, category: e.target.value })}
-          className="w-full p-2 sm:p-3 rounded-lg bg-white/10 text-white outline-none focus:ring-2 focus:ring-indigo-500"
         >
           {expenseCategories.map((cat) => (
             <option key={cat}>{cat}</option>
           ))}
         </select>
 
-        {/* DATE */}
         <input
           type="date"
-          value={form.date}
+          className="w-full p-2 bg-white/10 text-white"
           onChange={e => setForm({ ...form, date: e.target.value })}
-          className="w-full p-2 sm:p-3 rounded-lg bg-white/10 text-white outline-none focus:ring-2 focus:ring-indigo-500"
         />
 
-        {/* BUTTON */}
-        <button className="bg-orange-500 w-full py-2 sm:py-3 text-sm sm:text-base rounded-lg text-white hover:bg-orange-600 transition">
+        <button className="bg-orange-500 w-full py-2 rounded text-white">
           Add Expense
         </button>
 
